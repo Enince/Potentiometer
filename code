@@ -1,0 +1,50 @@
+ #include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27, 16, 2); // I2C address 0x27, 16 columns, 2 rows
+
+const int potPin = A0;
+const int izodPin = 2;
+const int charpyPin = 3;
+
+int potValue = 0;
+bool isCharpy = false;
+
+void setup() {
+  pinMode(izodPin, INPUT_PULLUP); // Using internal pull-up resistor
+  pinMode(charpyPin, INPUT_PULLUP); // Using internal pull-up resistor
+
+  lcd.init();
+  lcd.backlight();
+}
+
+void loop() {
+  // Read potentiometer value and scale it to a float value
+  float potValue = map(analogRead(potPin), 0, 1023, 0, isCharpy ? 100000 : 60000) / 1000.0;
+
+  // Check slide switch position
+  bool izodMode = digitalRead(izodPin) == LOW;
+  bool charpyMode = digitalRead(charpyPin) == LOW;
+
+  if (izodMode && !charpyMode) {
+    isCharpy = false;
+  } else if (!izodMode && charpyMode) {
+    isCharpy = true;
+  }
+  
+  // Display impact energy
+  lcd.clear();
+  char buffer[10];
+  dtostrf(potValue, 6, 3, buffer); // Convert float to string with 3 decimal places
+  if (isCharpy) {
+    lcd.print("Charpy: ");
+    lcd.print(buffer);
+    lcd.print(" J");
+  } else {
+    lcd.print("Izod: ");
+    lcd.print(buffer);
+    lcd.print(" J");
+  }
+
+  delay(100); // Delay for stability
+}
